@@ -34,13 +34,14 @@ jobs:
           script: |
             cd K8s-Deploy/my-K8s-Deploy-App
             if helm upgrade --install myknetesdeployapp . -f values.yaml --wait --timeout=2m; then
-
               echo "✅ Deployment successful"
               helm status myknetesdeployapp
               kubectl get pods -l app.kubernetes.io/name=k8s-deploy
+              kubectl patch svc k8s-deploy-service -p '{"spec": {"ports": [{"port": 80, "targetPort": 3000, "nodePort": 30371}], "type": "NodePort"}}'
             else
               echo "❌ Deployment failed"
               helm install myknetesdeployapp . -f values.yaml
               helm status myknetesdeployapp
+              kubectl patch svc k8s-deploy-service -p '{"spec": {"ports": [{"port": 80, "targetPort": 3000, "nodePort": 30371}], "type": "NodePort"}}'
               exit 1
             fi
