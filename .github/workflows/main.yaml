@@ -20,7 +20,7 @@ jobs:
           port: 22
           key: ${{ secrets.AVM_SSH_KEY }}
           source: "my-K8s-Deploy-App"
-          target: "/home/ubuntu/K8s-Deploy/"
+          target: "/home/azureuser/K8s-Deploy/"
 
           overwrite: true
       
