@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* https://tailwindcss.com/docs/adding-custom-styles#adding-base-styles */
+@layer base {
+  a {
+    @apply text-blue-700 underline;
+  }
+  h1 {
+    @apply text-2xl;
+  }
+  h2 {
+    @apply text-xl;
+  }
+  button {
+    @apply border-2 border-black bg-slate-300 p-1 rounded-md;
+  }
+}

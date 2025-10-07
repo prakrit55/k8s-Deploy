@@ -1,0 +1,109 @@
+name: CI/CD Pipeline
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:20.10.7-dind
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get lowercase repo
+        id: repo
+        run: echo "repo=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Get workload SHA
+        id: workload_sha
+        run: echo "workload_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Check if workload changed
+        id: workload-changed
+        run: |
+          if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ] || [ -z "${{ github.event.before }}" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^wisecow.sh' && echo true || echo false)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build workload Docker image
+        if: steps.workload-changed.outputs.changed == 'true'
+        run: |
+          docker build -t ghcr.io/${{ steps.repo.outputs.repo }}/workload:${{ steps.workload_sha.outputs.workload_sha }} .
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push workload Docker image
+        if: steps.workload-changed.outputs.changed == 'true'
+        run: |
+          docker push ghcr.io/${{ steps.repo.outputs.repo }}/workload:${{ steps.workload_sha.outputs.workload_sha }}
+
+      - name: Make workload package public
+        if: steps.workload-changed.outputs.changed == 'true'
+        run: |
+          curl -X PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GHCR_PAT }}" \
+            -H "X-GitHub-Api-Version: 2025-09-13" \
+            https://api.github.com/user/packages/container/k8s-Deploy%2Fworkload \
+            -d '{"visibility":"public"}'
+
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      - name: Update workload image name in Helm values
+        run: |
+          yq e '.workload.image = "ghcr.io/${{ steps.repo.outputs.repo }}/workload"' -i my-K8s-Deploy-App/values.yaml
+
+      - name: Update workload image tag in Helm values
+        if: steps.workload-changed.outputs.changed == 'true'
+        run: |
+          yq e '.workload.tag = "${{ steps.workload_sha.outputs.workload_sha }}"' -i my-K8s-Deploy-App/values.yaml
+
+      - name: Show tag lines (debug)
+        run: |
+          grep 'tag:' my-K8s-Deploy-App/values.yaml
+          grep 'image:' my-K8s-Deploy-App/values.yaml
+          cat my-K8s-Deploy-App/values.yaml
+          
+      - name: Auto-commit tag update to helm-update
+        if: github.ref == 'refs/heads/dev' && steps.workload-changed.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add .
+          git commit -m "CI: Update image tags to workload:${{ steps.workload_sha.outputs.workload_sha }}" 
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GHCR_PAT }}
+          branch: dev
+
+      - name: Create Pull Request
+        if: steps.workload-changed.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GHCR_PAT }}
+          commit-message: "feat: update ${{ steps.workload_sha.outputs.workload_sha }} workload image on main"
+          branch: workload-update-${{ steps.workload_sha.outputs.workload_sha }}
+          delete-branch: true
+          base: main
+          title: "update ${{ steps.workload_sha.outputs.workload_sha }} workload image on main"
+          body: "Automated PR from dev to main."
+          paths: ./my-K8s-Deploy-App
