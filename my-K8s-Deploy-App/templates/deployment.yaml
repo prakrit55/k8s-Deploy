@@ -13,7 +13,7 @@ spec:
         container: k8s-deploy
     spec:
       containers:
-        - name: k8s-deploy-container
+        - name: k8s-deploy
           image: "{{ .Values.workload.image }}:{{ .Values.workload.tag }}"
           ports:
             - containerPort: {{ .Values.workload.containerPort }}
