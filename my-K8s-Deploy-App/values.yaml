@@ -6,7 +6,7 @@ workload:
   image: ghcr.io/prakrit55/k8s-deploy/workload
   tag: "0781d7e"
   replicaCount: 1
-  containerPort: 4499
+  containerPort: 3000
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
