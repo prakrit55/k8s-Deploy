@@ -33,14 +33,14 @@ jobs:
           key: ${{ secrets.AVM_SSH_KEY }}
           script: |
             cd K8s-Deploy/my-K8s-Deploy-App
-            if helm upgrade --install my-K8s-Deploy-App . -f values.yaml --wait --timeout=2m; then
+            if helm upgrade --install myknetesdeployapp . -f values.yaml --wait --timeout=2m; then
 
               echo "✅ Deployment successful"
-              helm status my-K8s-Deploy-App
+              helm status myknetesdeployapp
               kubectl get pods -l app.kubernetes.io/name=k8s-deploy
             else
               echo "❌ Deployment failed"
-              helm install my-K8s-Deploy-App . -f values.yaml
-              helm status my-K8s-Deploy-App
+              helm install myknetesdeployapp . -f values.yaml
+              helm status myknetesdeployapp
               exit 1
             fi
