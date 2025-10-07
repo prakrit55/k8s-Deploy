@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       labels:
-        container: k8s-deploy
+        app: k8s-deploy
     spec:
       containers:
         - name: k8s-deploy
