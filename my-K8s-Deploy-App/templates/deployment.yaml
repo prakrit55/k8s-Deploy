@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-deploy-deployment
+spec:
+  replicas: {{ .Values.workload.replicaCount }}
+  selector:
+    matchLabels:
+      app: k8s-deploy
+  template:
+    metadata:
+      labels:
+        container: k8s-deploy
+    spec:
+      containers:
+        - name: k8s-deploy-container
+          image: "{{ .Values.workload.image }}:{{ .Values.workload.tag }}"
+          ports:
+            - containerPort: {{ .Values.workload.containerPort }}
+      imagePullSecrets:
+      - name: ghcr-secret
