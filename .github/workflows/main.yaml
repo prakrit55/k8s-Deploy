@@ -28,7 +28,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.AVM_HOST }}
-          username: ubuntu
+          username: azureuser
           timeout: 3m  
           key: ${{ secrets.AVM_SSH_KEY }}
           script: |
