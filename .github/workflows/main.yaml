@@ -36,10 +36,11 @@ jobs:
             if helm upgrade --install myapp . -f values.yaml --wait --timeout=2m; then
 
               echo "✅ Deployment successful"
-              helm status myapp
-              kubectl get pods -l app.kubernetes.io/name=myapp
+              helm status my-K8s-Deploy-App
+              kubectl get pods -l app.kubernetes.io/name=k8s-deploy
             else
               echo "❌ Deployment failed"
-              helm status myapp
+              helm install my-K8s-Deploy-App -f values.yaml
+              helm status my-K8s-Deploy-App
               exit 1
             fi
