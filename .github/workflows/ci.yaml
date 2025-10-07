@@ -7,8 +7,6 @@ permissions:
 on:
   push:
     branches: [ dev ]
-  pull_request:
-    branches: [ dev ]
 
 jobs:
   build-and-scan:
@@ -36,8 +34,28 @@ jobs:
           if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ] || [ -z "${{ github.event.before }}" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
-            echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^wisecow.sh' && echo true || echo false)" >> $GITHUB_OUTPUT
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^frontend/')
+            if [ -n "$CHANGED_FILES" ]; then
+              echo "changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "changed=false" >> $GITHUB_OUTPUT
+            fi
           fi
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22  # or your project's Node version
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Run linting checks
+        run: npm run lint
 
       - name: Build workload Docker image
         if: steps.workload-changed.outputs.changed == 'true'
@@ -59,7 +77,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GHCR_PAT }}" \
             -H "X-GitHub-Api-Version: 2025-09-13" \
-            https://api.github.com/user/packages/container/k8s-Deploy%2Fworkload \
+            https://api.github.com/user/packages/container/k8s-deploy%2Fworkload \
             -d '{"visibility":"public"}'
 
       - name: Install yq
