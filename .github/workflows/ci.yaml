@@ -34,7 +34,7 @@ jobs:
           if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ] || [ -z "${{ github.event.before }}" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
-            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^frontend/')
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
             if [ -n "$CHANGED_FILES" ]; then
               echo "changed=true" >> $GITHUB_OUTPUT
             else
