@@ -3,8 +3,8 @@
 
 replicaCount: 1
 workload:
-  image: ghcr.io/prakrit55/k8s-Deploy/workload
-  tag: ""
+  image: ghcr.io/prakrit55/k8s-deploy/workload
+  tag: "0781d7e"
   replicaCount: 1
   containerPort: 4499
 imagePullSecrets: []
